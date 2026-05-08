@@ -2,18 +2,24 @@
 <html lang="es" data-theme="dark">
 
 <head>
+
+  <!-- META -->
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
 
   <!-- SEO -->
   <meta
     name="description"
-    content="TaskFlow - Aplicación moderna de gestión de tareas."
+    content="TaskFlow — Plataforma moderna de gestión de tareas y productividad."
   />
 
   <meta
     name="keywords"
-    content="ToDo, tareas, productividad, task manager"
+    content="taskflow, todo app, productividad, tareas, organización"
   />
 
   <meta
@@ -21,8 +27,29 @@
     content="TaskFlow Team"
   />
 
-  <!-- TÍTULO -->
-  <title>TaskFlow — Gestión de Tareas</title>
+  <meta
+    name="theme-color"
+    content="#7c6af7"
+  />
+
+  <!-- OPEN GRAPH -->
+  <meta
+    property="og:title"
+    content="TaskFlow — Gestión Inteligente de Tareas"
+  />
+
+  <meta
+    property="og:description"
+    content="Organiza tus tareas, controla tu progreso y aumenta tu productividad."
+  />
+
+  <meta
+    property="og:type"
+    content="website"
+  />
+
+  <!-- TITLE -->
+  <title>TaskFlow — Gestión Inteligente de Tareas</title>
 
   <!-- FAVICON -->
   <link
@@ -34,7 +61,11 @@
   <!-- GOOGLE FONTS -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
 
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin
+  />
 
   <link
     href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;700&display=swap"
@@ -51,43 +82,116 @@
 
 <body>
 
+  <!-- BACKGROUND EFFECT -->
+  <div class="bg-grid"></div>
+
   <!-- APP -->
   <main class="app">
 
+    <!-- ===================================== -->
     <!-- HEADER -->
+    <!-- ===================================== -->
+
     <header class="header">
 
-      <div class="logo">
+      <!-- LOGO -->
+      <div class="logo-area">
 
-        <div class="logo-icon">
-          ✦
+        <div class="logo">
+
+          <div class="logo-icon">
+            ✦
+          </div>
+
+          <div class="logo-text">
+
+            <h1>
+              Task<span>Flow</span>
+            </h1>
+
+            <p>
+              Gestión moderna de productividad
+            </p>
+
+          </div>
+
         </div>
-
-        <h1>
-          Task<span>Flow</span>
-        </h1>
 
       </div>
 
-      <button
-        class="theme-btn"
-        id="themeBtn"
-        title="Cambiar tema"
-        aria-label="Cambiar tema"
-      >
-        🌙
-      </button>
+      <!-- ACTIONS -->
+      <div class="header-actions">
+
+        <!-- STATUS -->
+        <div class="live-status">
+
+          <span class="status-dot"></span>
+
+          <span>
+            En línea
+          </span>
+
+        </div>
+
+        <!-- THEME BUTTON -->
+        <button
+          class="theme-btn"
+          id="themeBtn"
+          aria-label="Cambiar tema"
+          title="Cambiar tema"
+        >
+          🌙
+        </button>
+
+      </div>
 
     </header>
 
+    <!-- ===================================== -->
+    <!-- HERO -->
+    <!-- ===================================== -->
+
+    <section class="hero">
+
+      <div class="hero-content">
+
+        <span class="hero-badge">
+          ✨ Organiza mejor tu día
+        </span>
+
+        <h2>
+          Gestiona tus tareas
+          de forma inteligente
+        </h2>
+
+        <p>
+          Mantén el control de tus pendientes,
+          prioridades y progreso desde un solo lugar.
+        </p>
+
+      </div>
+
+    </section>
+
+    <!-- ===================================== -->
     <!-- DASHBOARD -->
+    <!-- ===================================== -->
+
     <section class="stats">
 
       <!-- TOTAL -->
       <article class="stat-card">
 
-        <div class="stat-label">
-          Total
+        <div class="stat-top">
+
+          <span class="stat-icon">
+            📋
+          </span>
+
+          <span class="stat-label">
+            Total
+          </span>
+
         </div>
 
         <div
@@ -102,8 +206,16 @@
       <!-- COMPLETADAS -->
       <article class="stat-card">
 
-        <div class="stat-label">
-          Completadas
+        <div class="stat-top">
+
+          <span class="stat-icon">
+            ✅
+          </span>
+
+          <span class="stat-label">
+            Completadas
+          </span>
+
         </div>
 
         <div
@@ -118,8 +230,16 @@
       <!-- URGENTES -->
       <article class="stat-card">
 
-        <div class="stat-label">
-          🔴 Urgentes
+        <div class="stat-top">
+
+          <span class="stat-icon">
+            🔥
+          </span>
+
+          <span class="stat-label">
+            Urgentes
+          </span>
+
         </div>
 
         <div
@@ -133,17 +253,28 @@
 
     </section>
 
+    <!-- ===================================== -->
     <!-- PROGRESS -->
-    <section class="progress-bar-wrap">
+    <!-- ===================================== -->
 
-      <div class="progress-bar-header">
+    <section class="progress-card">
 
-        <strong id="progressLabel">
-          Progreso
-        </strong>
+      <div class="progress-info">
 
-        <span id="progressPct">
-          0% completado
+        <div>
+
+          <p class="progress-title">
+            Progreso General
+          </p>
+
+          <h3 id="progressPct">
+            0% completado
+          </h3>
+
+        </div>
+
+        <span class="progress-badge">
+          Productividad
         </span>
 
       </div>
@@ -153,53 +284,94 @@
         <div
           class="progress-fill"
           id="progressFill"
-          style="width: 0%;"
+          style="width:0%;"
         ></div>
 
       </div>
 
     </section>
 
+    <!-- ===================================== -->
     <!-- FORM -->
-    <section class="input-area">
+    <!-- ===================================== -->
 
-      <input
-        type="text"
-        id="taskInput"
-        placeholder="¿Qué necesitas hacer hoy?"
-        maxlength="120"
-        autocomplete="off"
-      />
+    <section class="input-card">
 
-      <select
-        class="priority-select"
-        id="prioritySelect"
-      >
+      <div class="input-header">
 
-        <option value="alta">
-          🔴 Alta
-        </option>
+        <h3>
+          Nueva tarea
+        </h3>
 
-        <option value="media" selected>
-          🟡 Media
-        </option>
+        <p>
+          Agrega una nueva actividad a tu lista.
+        </p>
 
-        <option value="baja">
-          🟢 Baja
-        </option>
+      </div>
 
-      </select>
+      <div class="input-area">
 
-      <button
-        class="add-btn"
-        id="addBtn"
-      >
-        + Agregar
-      </button>
+        <!-- INPUT -->
+        <div class="input-group">
+
+          <label for="taskInput">
+            Nombre de la tarea
+          </label>
+
+          <input
+            type="text"
+            id="taskInput"
+            placeholder="Ej: Terminar diseño UI..."
+            maxlength="120"
+            autocomplete="off"
+          />
+
+        </div>
+
+        <!-- PRIORIDAD -->
+        <div class="input-group">
+
+          <label for="prioritySelect">
+            Prioridad
+          </label>
+
+          <select
+            class="priority-select"
+            id="prioritySelect"
+          >
+
+            <option value="alta">
+              🔴 Alta
+            </option>
+
+            <option value="media" selected>
+              🟡 Media
+            </option>
+
+            <option value="baja">
+              🟢 Baja
+            </option>
+
+          </select>
+
+        </div>
+
+        <!-- BUTTON -->
+        <button
+          class="add-btn"
+          id="addBtn"
+        >
+          + Agregar tarea
+        </button>
+
+      </div>
 
     </section>
 
-    <!-- CONTROLES -->
+    <!-- ===================================== -->
+    <!-- CONTROLS -->
+    <!-- ===================================== -->
+
     <section class="controls">
 
       <!-- SEARCH -->
@@ -212,10 +384,9 @@
           stroke-width="2"
           stroke-linecap="round"
           stroke-linejoin="round"
-          aria-hidden="true"
         >
-          <circle cx="11" cy="11" r="8" />
-          <path d="m21 21-4.35-4.35" />
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.35-4.35"></path>
         </svg>
 
         <input
@@ -255,37 +426,58 @@
 
     </section>
 
-    <!-- TASK COUNTER -->
-    <div
-      class="task-count"
-      id="taskCount"
-    >
-      0 tareas
-    </div>
+    <!-- ===================================== -->
+    <!-- TASK HEADER -->
+    <!-- ===================================== -->
 
+    <section class="task-header">
+
+      <div
+        class="task-count"
+        id="taskCount"
+      >
+        0 tareas
+      </div>
+
+      <div class="task-status">
+        Gestión activa
+      </div>
+
+    </section>
+
+    <!-- ===================================== -->
     <!-- TASK LIST -->
+    <!-- ===================================== -->
+
     <section
       class="task-list"
       id="taskList"
     >
 
-      <!-- TAREAS DINÁMICAS -->
+      <!-- JS -->
 
     </section>
 
+    <!-- ===================================== -->
     <!-- EMPTY STATE -->
+    <!-- ===================================== -->
+
     <section
       class="empty-state"
       id="emptyState"
     >
 
-      <div class="icon">
-        📝
+      <div class="empty-illustration">
+        ✨
       </div>
 
+      <h3>
+        Todo está organizado
+      </h3>
+
       <p>
-        No hay tareas todavía.<br>
-        Agrega una nueva tarea para comenzar.
+        Aún no tienes tareas registradas.<br>
+        Comienza agregando una nueva actividad.
       </p>
 
     </section>
@@ -296,4 +488,5 @@
   <script src="taskflow/js/app.js"></script>
 
 </body>
+
 </html>
