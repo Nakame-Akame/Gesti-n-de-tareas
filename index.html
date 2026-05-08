@@ -1,57 +1,144 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Gestión de Tareas</title>
 
-  <link rel="stylesheet" href="css/style.css" />
+  <title>TaskFlow - Gestión de Tareas</title>
+
+  <!-- GOOGLE FONTS -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Syne:wght@700;800&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-  <!-- HEADER -->
-  <header class="header">
-    <h1>🚀 Gestión de Tareas</h1>
+  <div class="app">
 
-    <button id="theme-toggle" class="theme-btn">
-      🌙 Tema Oscuro
-    </button>
-  </header>
+    <!-- HEADER -->
+    <header>
 
-  <!-- DASHBOARD -->
-  <section class="dashboard">
+      <div class="logo">
 
-    <div class="card">
-      <h3>Total de tareas</h3>
-      <p id="total-tasks">0</p>
-    </div>
+        <div class="logo-icon">
+          ✓
+        </div>
 
-    <div class="card">
-      <h3>Progreso</h3>
-      <p id="progress">0%</p>
-    </div>
+        <h1>
+          Task<span>Flow</span>
+        </h1>
 
-    <div class="card urgent">
-      <h3>Tareas urgentes</h3>
-      <p id="urgent-count">0</p>
-    </div>
+      </div>
 
-  </section>
+      <button
+        id="themeToggle"
+        class="theme-btn"
+        aria-label="Cambiar tema"
+      >
+        🌙
+      </button>
 
-  <!-- FORMULARIO -->
-  <section class="form-section">
+    </header>
 
-    <form id="task-form">
+    <!-- ESTADÍSTICAS -->
+    <section class="stats">
+
+      <article class="stat-card">
+
+        <p class="stat-label">
+          Total tareas
+        </p>
+
+        <h2
+          class="stat-value accent"
+          id="totalTasks"
+        >
+          0
+        </h2>
+
+      </article>
+
+      <article class="stat-card">
+
+        <p class="stat-label">
+          Completadas
+        </p>
+
+        <h2
+          class="stat-value"
+          id="completedTasks"
+        >
+          0
+        </h2>
+
+      </article>
+
+      <article class="stat-card">
+
+        <p class="stat-label">
+          Prioridad alta
+        </p>
+
+        <h2
+          class="stat-value danger"
+          id="urgentTasks"
+        >
+          0
+        </h2>
+
+      </article>
+
+    </section>
+
+    <!-- BARRA DE PROGRESO -->
+    <section class="progress-bar-wrap">
+
+      <div class="progress-bar-header">
+
+        <span>
+          Progreso general
+        </span>
+
+        <strong id="progressText">
+          0%
+        </strong>
+
+      </div>
+
+      <div class="progress-track">
+
+        <div
+          class="progress-fill"
+          id="progressFill"
+          style="width: 0%;"
+        ></div>
+
+      </div>
+
+    </section>
+
+    <!-- FORMULARIO -->
+    <section class="input-area">
 
       <input
         type="text"
-        id="task-input"
-        placeholder="Escribe una tarea..."
-        required
+        id="taskInput"
+        placeholder="Escribe una nueva tarea..."
       />
 
-      <select id="priority-select">
+      <select
+        id="prioritySelect"
+        class="priority-select"
+      >
 
         <option value="Alta">
           🔴 Alta
@@ -67,93 +154,141 @@
 
       </select>
 
-      <button type="submit">
-        ➕ Agregar
+      <button
+        id="addTaskBtn"
+        class="add-btn"
+      >
+        + Agregar
       </button>
 
-    </form>
+    </section>
 
-  </section>
+    <!-- CONTROLES -->
+    <section class="controls">
 
-  <!-- BUSCADOR -->
-  <section class="search-section">
+      <!-- BUSCADOR -->
+      <div class="search-wrap">
 
-    <input
-      type="text"
-      id="search-input"
-      placeholder="🔎 Buscar tareas..."
-    />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="2"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z"
+          />
+        </svg>
 
-  </section>
+        <input
+          type="text"
+          id="searchInput"
+          class="search-input"
+          placeholder="Buscar tareas..."
+        />
 
-  <!-- FILTROS -->
-  <section class="filters">
+      </div>
 
-    <button data-filter="all" class="filter-btn active">
-      Todas
-    </button>
+      <!-- FILTROS -->
+      <div class="filters">
 
-    <button data-filter="pending" class="filter-btn">
-      Pendientes
-    </button>
+        <button
+          class="filter-btn active"
+          data-filter="all"
+        >
+          Todas
+        </button>
 
-    <button data-filter="completed" class="filter-btn">
-      Completadas
-    </button>
+        <button
+          class="filter-btn"
+          data-filter="pending"
+        >
+          Pendientes
+        </button>
 
-  </section>
+        <button
+          class="filter-btn"
+          data-filter="completed"
+        >
+          Completadas
+        </button>
 
-  <!-- LISTA DE TAREAS -->
-  <main>
+      </div>
 
-    <ul id="task-list" class="task-list">
+    </section>
 
-      <!-- TAREAS DINÁMICAS -->
+    <!-- CONTADOR -->
+    <p
+      class="task-count"
+      id="taskCount"
+    >
+      0 tareas
+    </p>
 
-      <!-- EJEMPLO -->
+    <!-- LISTA DE TAREAS -->
+    <section
+      class="task-list"
+      id="taskList"
+    >
+
+      <!-- EJEMPLO DE TAREA -->
+
       <!--
-      <li class="task-item">
+      <article class="task-item">
 
-        <div class="task-info">
+        <button class="task-check">
+          ✓
+        </button>
 
-          <h3 class="task-title">
-            Estudiar JavaScript
+        <div class="task-body">
+
+          <h3 class="task-name">
+            Estudiar JavaScript DOM
           </h3>
 
-          <span class="priority high">
-            Alta
-          </span>
+          <p class="task-date">
+            Creada hoy
+          </p>
 
         </div>
 
-        <div class="task-actions">
+        <span class="priority-badge badge-alta">
+          Alta
+        </span>
 
-          <button class="complete-btn">
-            ✅
-          </button>
+        <button class="delete-btn">
+          ✕
+        </button>
 
-          <button class="delete-btn">
-            🗑
-          </button>
-
-        </div>
-
-      </li>
+      </article>
       -->
 
-    </ul>
+    </section>
 
-  </main>
+    <!-- EMPTY STATE -->
+    <section
+      class="empty-state"
+      id="emptyState"
+    >
 
-  <!-- FOOTER -->
-  <footer class="footer">
-    <p>
-      © 2026 - Aplicación de Gestión de Tareas
-    </p>
-  </footer>
+      <div class="icon">
+        📝
+      </div>
 
-  <!-- SCRIPTS -->
-  <script type="module" src="js/app.js"></script>
+      <p>
+        No tienes tareas aún.<br>
+        Agrega una nueva tarea para comenzar.
+      </p>
+
+    </section>
+
+  </div>
+
+  <!-- JAVASCRIPT -->
+  <script src="app.js"></script>
 
 </body>
 </html>
