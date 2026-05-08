@@ -1,177 +1,294 @@
-<!DOCTYPE html>
-<html lang="es" data-theme="dark">
+/* ============================================================
+   TaskFlow — script.js (REFORMATEADO PRO)
+   ============================================================ */
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+'use strict';
 
-  <!-- SEO -->
-  <meta name="description" content="TaskFlow - Aplicación moderna de gestión de tareas." />
-  <meta name="keywords" content="ToDo, tareas, productividad, task manager" />
-  <meta name="author" content="TaskFlow Team" />
-  <meta name="theme-color" content="#7c6af7" />
+/* ─────────────────────────────
+   CONFIG
+──────────────────────────── */
+const STORAGE_KEY = 'taskflow_tasks';
+const THEME_KEY   = 'taskflow_theme';
 
-  <title>TaskFlow — Gestión de Tareas</title>
+const FILTER_LABELS = {
+  all: 'Todas las tareas',
+  pending: 'Tareas pendientes',
+  completed: 'Tareas completadas',
+  high: 'Prioridad Alta',
+  medium: 'Prioridad Media',
+  low: 'Prioridad Baja',
+};
 
-  <!-- FAVICON (.ico correcto) -->
-  <link rel="icon" type="image/x-icon" href="taskflow/img/libreto.ico" />
+/* ─────────────────────────────
+   STATE
+──────────────────────────── */
+let tasks = [];
+let activeFilter = 'all';
+let searchQuery = '';
+let editingId = null;
+let deleteId = null;
+let sortMode = 'newest';
+let dragSrcIdx = null;
 
-  <!-- FONTS -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet" />
+/* ─────────────────────────────
+   DOM HELPERS
+──────────────────────────── */
+const $ = id => document.getElementById(id);
+const $$ = sel => document.querySelectorAll(sel);
 
-  <!-- CSS -->
-  <link rel="stylesheet" href="taskflow/css/style.css" />
-</head>
+/* ─────────────────────────────
+   DOM ELEMENTS
+──────────────────────────── */
+const taskList = $('taskList');
+const emptyState = $('emptyState');
+const searchInput = $('searchInput');
+const sortSelect = $('sortSelect');
+const sectionTitle = $('sectionTitle');
+const toastCont = $('toastContainer');
 
-<body>
+const themeToggle = $('themeToggle');
+const themeIcon = $('themeIcon');
 
-  <!-- APP -->
-  <main class="app" id="app">
+/* Modals */
+const taskModal = $('taskModal');
+const taskTitle = $('taskTitle');
+const taskDesc = $('taskDesc');
+const taskDue = $('taskDue');
+const modalTitle = $('modalTitle');
+const titleError = $('titleError');
 
-    <!-- HEADER -->
-    <header class="header">
+const deleteModal = $('deleteModal');
 
-      <div class="logo" aria-label="TaskFlow logo">
+/* ─────────────────────────────
+   STORAGE
+──────────────────────────── */
+const Storage = {
+  load() {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  },
+  save(data) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  },
+  getTheme() {
+    return localStorage.getItem(THEME_KEY) || 'dark';
+  },
+  setTheme(t) {
+    localStorage.setItem(THEME_KEY, t);
+  }
+};
 
-        <div class="logo-icon" aria-hidden="true">
-          ✦
-        </div>
+/* ─────────────────────────────
+   TASK CRUD
+──────────────────────────── */
+const TaskManager = {
 
-        <h1>
-          Task<span>Flow</span>
-        </h1>
+  create(title, desc, priority, due) {
+    const task = {
+      id: crypto.randomUUID(),
+      title: title.trim(),
+      desc: desc.trim(),
+      priority,
+      due: due || null,
+      completed: false,
+      createdAt: new Date().toISOString(),
+    };
 
-      </div>
+    tasks.unshift(task);
+    Storage.save(tasks);
+    return task;
+  },
 
-      <button
-        class="theme-btn"
-        id="themeBtn"
-        aria-label="Cambiar tema"
-      >
-        🌙
-      </button>
+  update(id, title, desc, priority, due) {
+    tasks = tasks.map(t =>
+      t.id === id
+        ? { ...t, title: title.trim(), desc: desc.trim(), priority, due }
+        : t
+    );
+    Storage.save(tasks);
+  },
 
-    </header>
+  remove(id) {
+    tasks = tasks.filter(t => t.id !== id);
+    Storage.save(tasks);
+  },
 
-    <!-- DASHBOARD -->
-    <section class="stats" aria-label="Estadísticas">
+  toggle(id) {
+    tasks = tasks.map(t =>
+      t.id === id ? { ...t, completed: !t.completed } : t
+    );
+    Storage.save(tasks);
+  },
 
-      <article class="stat-card">
-        <span class="stat-label">Total</span>
-        <strong class="stat-value" id="statTotal">0</strong>
-      </article>
+  reorder(from, to, filtered) {
+    const fromId = filtered[from].id;
+    const toId = filtered[to].id;
 
-      <article class="stat-card">
-        <span class="stat-label">Completadas</span>
-        <strong class="stat-value accent" id="statDone">0</strong>
-      </article>
+    const fi = tasks.findIndex(t => t.id === fromId);
+    const ti = tasks.findIndex(t => t.id === toId);
 
-      <article class="stat-card">
-        <span class="stat-label">Urgentes</span>
-        <strong class="stat-value danger" id="statHigh">0</strong>
-      </article>
+    const [moved] = tasks.splice(fi, 1);
+    tasks.splice(ti, 0, moved);
 
-    </section>
+    Storage.save(tasks);
+  },
+};
 
-    <!-- PROGRESS -->
-    <section class="progress-bar-wrap" aria-label="Progreso de tareas">
+/* ─────────────────────────────
+   FILTER + SORT
+──────────────────────────── */
+function getFiltered() {
+  let result = [...tasks];
 
-      <div class="progress-bar-header">
-        <strong>Progreso</strong>
-        <span id="progressPct">0%</span>
-      </div>
+  // filter
+  if (activeFilter === 'pending') result = result.filter(t => !t.completed);
+  if (activeFilter === 'completed') result = result.filter(t => t.completed);
 
-      <div class="progress-track">
-        <div class="progress-fill" id="progressFill"></div>
-      </div>
+  if (['high','medium','low'].includes(activeFilter)) {
+    result = result.filter(t => t.priority === activeFilter);
+  }
 
-    </section>
+  // search
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    result = result.filter(t =>
+      t.title.toLowerCase().includes(q) ||
+      t.desc.toLowerCase().includes(q)
+    );
+  }
 
-    <!-- INPUT -->
-    <section class="input-area" aria-label="Agregar tarea">
+  // sort
+  const order = { high: 0, medium: 1, low: 2 };
 
-      <input
-        type="text"
-        id="taskInput"
-        placeholder="Escribe una tarea..."
-        maxlength="120"
-        autocomplete="off"
-      />
+  if (sortMode === 'newest')
+    result.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-      <select id="prioritySelect" class="priority-select">
-        <option value="alta">🔴 Alta</option>
-        <option value="media" selected>🟡 Media</option>
-        <option value="baja">🟢 Baja</option>
-      </select>
+  if (sortMode === 'oldest')
+    result.sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt));
 
-      <button id="addBtn" class="add-btn">
-        + Agregar
-      </button>
+  if (sortMode === 'priority')
+    result.sort((a,b) => order[a.priority] - order[b.priority]);
 
-    </section>
+  if (sortMode === 'alpha')
+    result.sort((a,b) => a.title.localeCompare(b.title));
 
-    <!-- CONTROLS -->
-    <section class="controls" aria-label="Buscar y filtrar">
+  return result;
+}
 
-      <div class="search-wrap">
+/* ─────────────────────────────
+   RENDER
+──────────────────────────── */
+function render() {
+  const filtered = getFiltered();
 
-        <input
-          type="search"
-          id="searchInput"
-          class="search-input"
-          placeholder="Buscar tareas..."
-        />
+  sectionTitle.textContent = FILTER_LABELS[activeFilter] || 'Tareas';
 
-      </div>
+  if (!filtered.length) {
+    taskList.innerHTML = '';
+    emptyState.style.display = 'flex';
+    return;
+  }
 
-      <div class="filters">
+  emptyState.style.display = 'none';
 
-        <button class="filter-btn active" data-filter="todas">
-          Todas
-        </button>
+  taskList.innerHTML = filtered.map(buildCard).join('');
+  attachEvents(filtered);
 
-        <button class="filter-btn" data-filter="pendientes">
-          Pendientes
-        </button>
+  updateStats();
+}
 
-        <button class="filter-btn" data-filter="completadas">
-          Completadas
-        </button>
+/* ─────────────────────────────
+   CARD
+──────────────────────────── */
+function buildCard(t) {
+  const created = new Date(t.createdAt).toLocaleDateString('es-PE');
 
-      </div>
+  return `
+  <div class="task-card ${t.completed ? 'completed' : ''}" data-id="${t.id}">
+    <input type="checkbox" class="check" ${t.completed ? 'checked' : ''} />
 
-    </section>
-
-    <!-- COUNTER -->
-    <div class="task-count" id="taskCount">
-      0 tareas
+    <div>
+      <strong>${t.title}</strong>
+      <p>${t.desc || ''}</p>
+      <small>${t.priority} • ${created}</small>
     </div>
 
-    <!-- TASK LIST -->
-    <section
-      class="task-list"
-      id="taskList"
-      aria-live="polite"
-    ></section>
+    <div class="actions">
+      <button class="edit">✏️</button>
+      <button class="delete">🗑️</button>
+    </div>
+  </div>`;
+}
 
-    <!-- EMPTY STATE -->
-    <section class="empty-state" id="emptyState">
+/* ─────────────────────────────
+   EVENTS
+──────────────────────────── */
+function attachEvents(filtered) {
 
-      <div class="icon">📝</div>
+  document.querySelectorAll('.task-card').forEach((card, i) => {
 
-      <p>
-        No hay tareas todavía.<br />
-        Agrega una nueva para comenzar.
-      </p>
+    const id = card.dataset.id;
 
-    </section>
+    card.querySelector('.check').onclick = () => {
+      TaskManager.toggle(id);
+      render();
+    };
 
-  </main>
+    card.querySelector('.delete').onclick = () => {
+      TaskManager.remove(id);
+      render();
+    };
 
-  <!-- SCRIPT -->
-  <script src="taskflow/js/app.js" defer></script>
+    card.querySelector('.edit').onclick = () => openEdit(id);
 
-</body>
-</html>
+  });
+}
+
+/* ─────────────────────────────
+   EDIT
+──────────────────────────── */
+function openEdit(id) {
+  const t = tasks.find(x => x.id === id);
+  if (!t) return;
+
+  editingId = id;
+
+  taskTitle.value = t.title;
+  taskDesc.value = t.desc;
+  taskDue.value = t.due || '';
+
+  taskModal.classList.add('open');
+}
+
+function saveTask() {
+  const title = taskTitle.value.trim();
+  if (!title) return;
+
+  if (editingId) {
+    TaskManager.update(editingId, title, taskDesc.value, 'medium', taskDue.value);
+  } else {
+    TaskManager.create(title, taskDesc.value, 'medium', taskDue.value);
+  }
+
+  editingId = null;
+  taskModal.classList.remove('open');
+
+  render();
+}
+
+/* ─────────────────────────────
+   STATS
+──────────────────────────── */
+function updateStats() {
+  $('statTotal').textContent = tasks.length;
+  $('statCompleted').textContent = tasks.filter(t => t.completed).length;
+}
+
+/* ─────────────────────────────
+   INIT
+──────────────────────────── */
+function init() {
+  tasks = Storage.load();
+  render();
+}
+
+init();
