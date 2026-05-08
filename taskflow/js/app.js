@@ -1,518 +1,218 @@
-// ============================================
-// TaskFlow — app.js
-// ============================================
+// ==========================
+// TASKFLOW APP COMPLETO
+// ==========================
 
-// ============================================
-// ESTADO GLOBAL
-// ============================================
+let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 
-let tasks =
-  JSON.parse(
-    localStorage.getItem('taskflow_tasks')
-  ) || [];
+const taskInput = document.getElementById("taskInput");
+const addBtn = document.getElementById("addBtn");
+const taskList = document.getElementById("taskList");
+const searchInput = document.getElementById("searchInput");
+const filterBtns = document.querySelectorAll(".filter-btn");
 
-let currentFilter = 'todas';
-let currentSearch = '';
+const statTotal = document.getElementById("statTotal");
+const statDone = document.getElementById("statDone");
+const statHigh = document.getElementById("statHigh");
 
-// ============================================
-// REFERENCIAS DEL DOM
-// ============================================
+const progressFill = document.getElementById("progressFill");
+const progressPct = document.getElementById("progressPct");
 
-const taskInput =
-  document.getElementById('taskInput');
+const taskCount = document.getElementById("taskCount");
+const emptyState = document.getElementById("emptyState");
 
-const prioritySelect =
-  document.getElementById('prioritySelect');
+let currentFilter = "todas";
 
-const addBtn =
-  document.getElementById('addBtn');
+// ==========================
+// GUARDAR LOCALSTORAGE
+// ==========================
+function saveTasks() {
+  localStorage.setItem("tasks", JSON.stringify(tasks));
+}
 
-const searchInput =
-  document.getElementById('searchInput');
-
-const taskList =
-  document.getElementById('taskList');
-
-const taskCount =
-  document.getElementById('taskCount');
-
-const statTotal =
-  document.getElementById('statTotal');
-
-const statDone =
-  document.getElementById('statDone');
-
-const statHigh =
-  document.getElementById('statHigh');
-
-const progressFill =
-  document.getElementById('progressFill');
-
-const progressPct =
-  document.getElementById('progressPct');
-
-const themeBtn =
-  document.getElementById('themeBtn');
-
-const filterBtns =
-  document.querySelectorAll('.filter-btn');
-
-// ============================================
-// LOCAL STORAGE
-// ============================================
-
-const saveTasks = () => {
-  localStorage.setItem(
-    'taskflow_tasks',
-    JSON.stringify(tasks)
-  );
-};
-
-// ============================================
-// TEMA CLARO / OSCURO
-// ============================================
-
-const savedTheme =
-  localStorage.getItem('taskflow_theme') || 'dark';
-
-document.documentElement.setAttribute(
-  'data-theme',
-  savedTheme
-);
-
-themeBtn.textContent =
-  savedTheme === 'dark'
-    ? '☀️'
-    : '🌙';
-
-themeBtn.addEventListener('click', () => {
-
-  const currentTheme =
-    document.documentElement.getAttribute(
-      'data-theme'
-    );
-
-  const newTheme =
-    currentTheme === 'dark'
-      ? 'light'
-      : 'dark';
-
-  document.documentElement.setAttribute(
-    'data-theme',
-    newTheme
-  );
-
-  localStorage.setItem(
-    'taskflow_theme',
-    newTheme
-  );
-
-  themeBtn.textContent =
-    newTheme === 'dark'
-      ? '☀️'
-      : '🌙';
-});
-
-// ============================================
+// ==========================
 // AGREGAR TAREA
-// ============================================
+// ==========================
+addBtn.addEventListener("click", () => {
+  const text = taskInput.value.trim();
+  const priority = document.getElementById("prioritySelect").value;
 
-const addTask = () => {
+  if (!text) return;
 
-  const taskName =
-    taskInput.value.trim();
-
-  // VALIDACIÓN
-
-  if (!taskName) {
-
-    taskInput.focus();
-
-    taskInput.style.borderColor =
-      'var(--high)';
-
-    setTimeout(() => {
-      taskInput.style.borderColor = '';
-    }, 800);
-
-    return;
-  }
-
-  // NUEVA TAREA
-
-  const task = {
-
+  const newTask = {
     id: Date.now(),
-
-    name: taskName,
-
-    priority: prioritySelect.value,
-
-    done: false,
-
-    createdAt:
-      new Date().toLocaleDateString(
-        'es-PE',
-        {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric'
-        }
-      )
+    text,
+    completed: false,
+    priority,
   };
 
-  // AGREGAR AL ARRAY
-
-  tasks.unshift(task);
-
-  saveTasks();
-
-  taskInput.value = '';
-
-  taskInput.focus();
-
-  renderTasks();
-};
-
-// ============================================
-// EVENTOS AGREGAR
-// ============================================
-
-addBtn.addEventListener(
-  'click',
-  addTask
-);
-
-taskInput.addEventListener(
-  'keydown',
-  (e) => {
-
-    if (e.key === 'Enter') {
-      addTask();
-    }
-  }
-);
-
-// ============================================
-// COMPLETAR TAREA
-// ============================================
-
-const toggleDone = (id) => {
-
-  const task =
-    tasks.find(
-      (task) => task.id === id
-    );
-
-  if (!task) return;
-
-  task.done = !task.done;
+  tasks.push(newTask);
+  taskInput.value = "";
 
   saveTasks();
-
   renderTasks();
-};
+});
 
-// ============================================
-// ELIMINAR TAREA
-// ============================================
+// ENTER PARA AGREGAR
+taskInput.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") addBtn.click();
+});
 
-const deleteTask = (id) => {
+// ==========================
+// CAMBIAR ESTADO COMPLETADO
+// ==========================
+function toggleTask(id) {
+  tasks = tasks.map(task =>
+    task.id === id ? { ...task, completed: !task.completed } : task
+  );
 
-  const element =
-    document.querySelector(
-      `[data-id="${id}"]`
-    );
+  saveTasks();
+  renderTasks();
+}
 
-  if (!element) return;
+// ==========================
+// ELIMINAR
+// ==========================
+function deleteTask(id) {
+  tasks = tasks.filter(task => task.id !== id);
+  saveTasks();
+  renderTasks();
+}
 
-  element.classList.add('removing');
+// ==========================
+// EDITAR (INLINE)
+// ==========================
+function editTask(id, oldText, li) {
+  const input = document.createElement("input");
+  input.type = "text";
+  input.value = oldText;
+  input.className = "edit-input";
 
-  setTimeout(() => {
+  li.innerHTML = "";
+  li.appendChild(input);
+  input.focus();
 
-    tasks =
-      tasks.filter(
-        (task) => task.id !== id
+  const saveEdit = () => {
+    const newText = input.value.trim();
+    if (newText) {
+      tasks = tasks.map(task =>
+        task.id === id ? { ...task, text: newText } : task
       );
 
-    saveTasks();
+      saveTasks();
+      renderTasks();
+    }
+  };
 
-    renderTasks();
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") saveEdit();
+  });
 
-  }, 200);
-};
+  input.addEventListener("blur", saveEdit);
+}
 
-// ============================================
-// FILTROS
-// ============================================
+// ==========================
+// FILTRAR
+// ==========================
+filterBtns.forEach(btn => {
+  btn.addEventListener("click", () => {
+    filterBtns.forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
 
-filterBtns.forEach((btn) => {
-
-  btn.addEventListener('click', () => {
-
-    currentFilter =
-      btn.dataset.filter;
-
-    filterBtns.forEach((button) => {
-
-      button.classList.remove('active');
-
-    });
-
-    btn.classList.add('active');
-
+    currentFilter = btn.dataset.filter;
     renderTasks();
   });
 });
 
-// ============================================
-// BUSCADOR
-// ============================================
+// ==========================
+// BUSCAR
+// ==========================
+searchInput.addEventListener("input", renderTasks);
 
-searchInput.addEventListener(
-  'input',
-  () => {
+// ==========================
+// RENDER
+// ==========================
+function renderTasks() {
+  const search = searchInput.value.toLowerCase();
 
-    currentSearch =
-      searchInput.value.toLowerCase();
+  let filtered = tasks.filter(task => {
+    const matchSearch = task.text.toLowerCase().includes(search);
 
-    renderTasks();
-  }
-);
+    if (currentFilter === "pendientes") return !task.completed && matchSearch;
+    if (currentFilter === "completadas") return task.completed && matchSearch;
 
-// ============================================
-// ESCAPAR HTML (SEGURIDAD)
-// ============================================
-
-const escapeHtml = (text) => {
-
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-};
-
-// ============================================
-// ORDEN PRIORIDAD
-// ============================================
-
-const priorityOrder = {
-  alta: 0,
-  media: 1,
-  baja: 2
-};
-
-// ============================================
-// RENDER PRINCIPAL
-// ============================================
-
-const renderTasks = () => {
-
-  // ==========================================
-  // ESTADÍSTICAS
-  // ==========================================
-
-  const total =
-    tasks.length;
-
-  const completed =
-    tasks.filter(
-      (task) => task.done
-    ).length;
-
-  const urgent =
-    tasks.filter(
-      (task) =>
-        task.priority === 'alta' &&
-        !task.done
-    ).length;
-
-  const progress =
-    total === 0
-      ? 0
-      : Math.round(
-          (completed / total) * 100
-        );
-
-  // ==========================================
-  // ACTUALIZAR UI
-  // ==========================================
-
-  statTotal.textContent = total;
-
-  statDone.textContent = completed;
-
-  statHigh.textContent = urgent;
-
-  progressFill.style.width =
-    `${progress}%`;
-
-  progressPct.textContent =
-    `${progress}% completado`;
-
-  // ==========================================
-  // FILTRAR TAREAS
-  // ==========================================
-
-  let visibleTasks =
-    tasks.filter((task) => {
-
-      if (
-        currentFilter === 'pendientes' &&
-        task.done
-      ) {
-        return false;
-      }
-
-      if (
-        currentFilter === 'completadas' &&
-        !task.done
-      ) {
-        return false;
-      }
-
-      if (
-        currentSearch &&
-        !task.name
-          .toLowerCase()
-          .includes(currentSearch)
-      ) {
-        return false;
-      }
-
-      return true;
-    });
-
-  // ==========================================
-  // ORDENAR
-  // ==========================================
-
-  visibleTasks.sort((a, b) => {
-
-    if (a.done !== b.done) {
-      return a.done ? 1 : -1;
-    }
-
-    return (
-      priorityOrder[a.priority] -
-      priorityOrder[b.priority]
-    );
+    return matchSearch;
   });
 
-  // ==========================================
-  // CONTADOR
-  // ==========================================
+  taskList.innerHTML = "";
 
-  taskCount.textContent =
-    `${visibleTasks.length} tarea${
-      visibleTasks.length !== 1
-        ? 's'
-        : ''
-    }`;
+  if (filtered.length === 0) {
+    emptyState.style.display = "block";
+  } else {
+    emptyState.style.display = "none";
+  }
 
-  // ==========================================
-  // EMPTY STATE
-  // ==========================================
+  filtered.forEach(task => {
+    const li = document.createElement("div");
+    li.className = `task-item ${task.priority}`;
+    li.innerHTML = `
+      <div class="task-left">
+        <input type="checkbox" ${task.completed ? "checked" : ""} />
+        <span class="${task.completed ? "done" : ""}">${task.text}</span>
+      </div>
 
-  if (!visibleTasks.length) {
-
-    taskList.innerHTML = `
-      <div class="empty-state">
-
-        <div class="icon">
-          ${
-            currentSearch
-              ? '🔍'
-              : currentFilter === 'completadas'
-              ? '🎉'
-              : '📭'
-          }
-        </div>
-
-        <p>
-          ${
-            currentSearch
-              ? 'No se encontraron tareas.'
-              : currentFilter === 'completadas'
-              ? 'Aún no completas tareas.'
-              : 'No hay tareas disponibles.'
-          }
-        </p>
-
+      <div class="task-actions">
+        <button class="edit">✏️</button>
+        <button class="delete">🗑️</button>
       </div>
     `;
 
-    return;
-  }
+    // completar
+    li.querySelector("input").addEventListener("change", () => {
+      toggleTask(task.id);
+    });
 
-  // ==========================================
-  // RENDER TARJETAS
-  // ==========================================
+    // eliminar
+    li.querySelector(".delete").addEventListener("click", () => {
+      deleteTask(task.id);
+    });
 
-  taskList.innerHTML =
-    visibleTasks
-      .map((task) => {
+    // editar
+    li.querySelector(".edit").addEventListener("click", () => {
+      editTask(task.id, task.text, li);
+    });
 
-        return `
-          <article
-            class="task-item ${
-              task.done ? 'done' : ''
-            }"
-            data-id="${task.id}"
-          >
+    // doble click para editar también
+    li.querySelector("span").addEventListener("dblclick", () => {
+      editTask(task.id, task.text, li);
+    });
 
-            <button
-              class="task-check"
-              onclick="toggleDone(${task.id})"
-            >
-              ✓
-            </button>
+    taskList.appendChild(li);
+  });
 
-            <div class="task-body">
+  updateStats();
+}
 
-              <h3 class="task-name">
-                ${escapeHtml(task.name)}
-              </h3>
+// ==========================
+// ESTADÍSTICAS + PROGRESO
+// ==========================
+function updateStats() {
+  const total = tasks.length;
+  const done = tasks.filter(t => t.completed).length;
+  const high = tasks.filter(t => t.priority === "alta").length;
 
-              <p class="task-date">
-                ${task.createdAt}
-              </p>
+  statTotal.textContent = total;
+  statDone.textContent = done;
+  statHigh.textContent = high;
 
-            </div>
+  taskCount.textContent = `${total} tareas`;
 
-            <span
-              class="
-                priority-badge
-                badge-${task.priority}
-              "
-            >
-              ${task.priority}
-            </span>
+  const progress = total === 0 ? 0 : Math.round((done / total) * 100);
 
-            <button
-              class="delete-btn"
-              onclick="deleteTask(${task.id})"
-              title="Eliminar tarea"
-            >
-              ✕
-            </button>
+  progressFill.style.width = `${progress}%`;
+  progressPct.textContent = `${progress}%`;
+}
 
-          </article>
-        `;
-      })
-      .join('');
-};
-
-// ============================================
-// HACER FUNCIONES GLOBALES
-// ============================================
-
-window.toggleDone = toggleDone;
-window.deleteTask = deleteTask;
-
-// ============================================
-// RENDER INICIAL
-// ============================================
-
+// ==========================
+// INICIO
+// ==========================
 renderTasks();
