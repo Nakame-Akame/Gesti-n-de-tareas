@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TaskFlow — Gestión de Tareas</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <div class="app">
+
+    <!-- HEADER -->
+    <header>
+      <div class="logo">
+        <div class="logo-icon">✦</div>
+        Task<span>Flow</span>
+      </div>
+      <button class="theme-btn" id="themeBtn" title="Cambiar tema">🌙</button>
+    </header>
+
+    <!-- STATS DASHBOARD -->
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-label">Total</div>
+        <div class="stat-value" id="statTotal">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Completadas</div>
+        <div class="stat-value accent" id="statDone">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">🔴 Urgentes</div>
+        <div class="stat-value danger" id="statHigh">0</div>
+      </div>
+    </div>
+
+    <!-- PROGRESS BAR -->
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-header">
+        <strong id="progressLabel">Progreso</strong>
+        <span id="progressPct">0% completado</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <!-- INPUT AREA -->
+    <div class="input-area">
+      <input
+        type="text"
+        id="taskInput"
+        placeholder="¿Qué necesitas hacer hoy?"
+        maxlength="120"
+        autocomplete="off"
+      />
+      <select class="priority-select" id="prioritySelect">
+        <option value="alta">🔴 Alta</option>
+        <option value="media" selected>🟡 Media</option>
+        <option value="baja">🟢 Baja</option>
+      </select>
+      <button class="add-btn" id="addBtn">+ Agregar</button>
+    </div>
+
+    <!-- SEARCH + FILTERS -->
+    <div class="controls">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input type="text" class="search-input" id="searchInput" placeholder="Buscar tareas..." />
+      </div>
+      <div class="filters">
+        <button class="filter-btn active" data-filter="todas">Todas</button>
+        <button class="filter-btn" data-filter="pendientes">Pendientes</button>
+        <button class="filter-btn" data-filter="completadas">Completadas</button>
+      </div>
+    </div>
+
+    <!-- TASK LIST -->
+    <div class="task-count" id="taskCount"></div>
+    <div class="task-list" id="taskList"></div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
