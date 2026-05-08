@@ -1,218 +1,294 @@
-// ==========================
-// TASKFLOW APP COMPLETO
-// ==========================
+/* ============================================================
+   TaskFlow — script.js (REFORMATEADO PRO)
+   ============================================================ */
 
-let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+'use strict';
 
-const taskInput = document.getElementById("taskInput");
-const addBtn = document.getElementById("addBtn");
-const taskList = document.getElementById("taskList");
-const searchInput = document.getElementById("searchInput");
-const filterBtns = document.querySelectorAll(".filter-btn");
+/* ─────────────────────────────
+   CONFIG
+──────────────────────────── */
+const STORAGE_KEY = 'taskflow_tasks';
+const THEME_KEY   = 'taskflow_theme';
 
-const statTotal = document.getElementById("statTotal");
-const statDone = document.getElementById("statDone");
-const statHigh = document.getElementById("statHigh");
+const FILTER_LABELS = {
+  all: 'Todas las tareas',
+  pending: 'Tareas pendientes',
+  completed: 'Tareas completadas',
+  high: 'Prioridad Alta',
+  medium: 'Prioridad Media',
+  low: 'Prioridad Baja',
+};
 
-const progressFill = document.getElementById("progressFill");
-const progressPct = document.getElementById("progressPct");
+/* ─────────────────────────────
+   STATE
+──────────────────────────── */
+let tasks = [];
+let activeFilter = 'all';
+let searchQuery = '';
+let editingId = null;
+let deleteId = null;
+let sortMode = 'newest';
+let dragSrcIdx = null;
 
-const taskCount = document.getElementById("taskCount");
-const emptyState = document.getElementById("emptyState");
+/* ─────────────────────────────
+   DOM HELPERS
+──────────────────────────── */
+const $ = id => document.getElementById(id);
+const $$ = sel => document.querySelectorAll(sel);
 
-let currentFilter = "todas";
+/* ─────────────────────────────
+   DOM ELEMENTS
+──────────────────────────── */
+const taskList = $('taskList');
+const emptyState = $('emptyState');
+const searchInput = $('searchInput');
+const sortSelect = $('sortSelect');
+const sectionTitle = $('sectionTitle');
+const toastCont = $('toastContainer');
 
-// ==========================
-// GUARDAR LOCALSTORAGE
-// ==========================
-function saveTasks() {
-  localStorage.setItem("tasks", JSON.stringify(tasks));
-}
+const themeToggle = $('themeToggle');
+const themeIcon = $('themeIcon');
 
-// ==========================
-// AGREGAR TAREA
-// ==========================
-addBtn.addEventListener("click", () => {
-  const text = taskInput.value.trim();
-  const priority = document.getElementById("prioritySelect").value;
+/* Modals */
+const taskModal = $('taskModal');
+const taskTitle = $('taskTitle');
+const taskDesc = $('taskDesc');
+const taskDue = $('taskDue');
+const modalTitle = $('modalTitle');
+const titleError = $('titleError');
 
-  if (!text) return;
+const deleteModal = $('deleteModal');
 
-  const newTask = {
-    id: Date.now(),
-    text,
-    completed: false,
-    priority,
-  };
+/* ─────────────────────────────
+   STORAGE
+──────────────────────────── */
+const Storage = {
+  load() {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  },
+  save(data) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  },
+  getTheme() {
+    return localStorage.getItem(THEME_KEY) || 'dark';
+  },
+  setTheme(t) {
+    localStorage.setItem(THEME_KEY, t);
+  }
+};
 
-  tasks.push(newTask);
-  taskInput.value = "";
+/* ─────────────────────────────
+   TASK CRUD
+──────────────────────────── */
+const TaskManager = {
 
-  saveTasks();
-  renderTasks();
-});
+  create(title, desc, priority, due) {
+    const task = {
+      id: crypto.randomUUID(),
+      title: title.trim(),
+      desc: desc.trim(),
+      priority,
+      due: due || null,
+      completed: false,
+      createdAt: new Date().toISOString(),
+    };
 
-// ENTER PARA AGREGAR
-taskInput.addEventListener("keypress", (e) => {
-  if (e.key === "Enter") addBtn.click();
-});
+    tasks.unshift(task);
+    Storage.save(tasks);
+    return task;
+  },
 
-// ==========================
-// CAMBIAR ESTADO COMPLETADO
-// ==========================
-function toggleTask(id) {
-  tasks = tasks.map(task =>
-    task.id === id ? { ...task, completed: !task.completed } : task
-  );
+  update(id, title, desc, priority, due) {
+    tasks = tasks.map(t =>
+      t.id === id
+        ? { ...t, title: title.trim(), desc: desc.trim(), priority, due }
+        : t
+    );
+    Storage.save(tasks);
+  },
 
-  saveTasks();
-  renderTasks();
-}
+  remove(id) {
+    tasks = tasks.filter(t => t.id !== id);
+    Storage.save(tasks);
+  },
 
-// ==========================
-// ELIMINAR
-// ==========================
-function deleteTask(id) {
-  tasks = tasks.filter(task => task.id !== id);
-  saveTasks();
-  renderTasks();
-}
+  toggle(id) {
+    tasks = tasks.map(t =>
+      t.id === id ? { ...t, completed: !t.completed } : t
+    );
+    Storage.save(tasks);
+  },
 
-// ==========================
-// EDITAR (INLINE)
-// ==========================
-function editTask(id, oldText, li) {
-  const input = document.createElement("input");
-  input.type = "text";
-  input.value = oldText;
-  input.className = "edit-input";
+  reorder(from, to, filtered) {
+    const fromId = filtered[from].id;
+    const toId = filtered[to].id;
 
-  li.innerHTML = "";
-  li.appendChild(input);
-  input.focus();
+    const fi = tasks.findIndex(t => t.id === fromId);
+    const ti = tasks.findIndex(t => t.id === toId);
 
-  const saveEdit = () => {
-    const newText = input.value.trim();
-    if (newText) {
-      tasks = tasks.map(task =>
-        task.id === id ? { ...task, text: newText } : task
-      );
+    const [moved] = tasks.splice(fi, 1);
+    tasks.splice(ti, 0, moved);
 
-      saveTasks();
-      renderTasks();
-    }
-  };
+    Storage.save(tasks);
+  },
+};
 
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") saveEdit();
-  });
+/* ─────────────────────────────
+   FILTER + SORT
+──────────────────────────── */
+function getFiltered() {
+  let result = [...tasks];
 
-  input.addEventListener("blur", saveEdit);
-}
+  // filter
+  if (activeFilter === 'pending') result = result.filter(t => !t.completed);
+  if (activeFilter === 'completed') result = result.filter(t => t.completed);
 
-// ==========================
-// FILTRAR
-// ==========================
-filterBtns.forEach(btn => {
-  btn.addEventListener("click", () => {
-    filterBtns.forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-
-    currentFilter = btn.dataset.filter;
-    renderTasks();
-  });
-});
-
-// ==========================
-// BUSCAR
-// ==========================
-searchInput.addEventListener("input", renderTasks);
-
-// ==========================
-// RENDER
-// ==========================
-function renderTasks() {
-  const search = searchInput.value.toLowerCase();
-
-  let filtered = tasks.filter(task => {
-    const matchSearch = task.text.toLowerCase().includes(search);
-
-    if (currentFilter === "pendientes") return !task.completed && matchSearch;
-    if (currentFilter === "completadas") return task.completed && matchSearch;
-
-    return matchSearch;
-  });
-
-  taskList.innerHTML = "";
-
-  if (filtered.length === 0) {
-    emptyState.style.display = "block";
-  } else {
-    emptyState.style.display = "none";
+  if (['high','medium','low'].includes(activeFilter)) {
+    result = result.filter(t => t.priority === activeFilter);
   }
 
-  filtered.forEach(task => {
-    const li = document.createElement("div");
-    li.className = `task-item ${task.priority}`;
-    li.innerHTML = `
-      <div class="task-left">
-        <input type="checkbox" ${task.completed ? "checked" : ""} />
-        <span class="${task.completed ? "done" : ""}">${task.text}</span>
-      </div>
+  // search
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    result = result.filter(t =>
+      t.title.toLowerCase().includes(q) ||
+      t.desc.toLowerCase().includes(q)
+    );
+  }
 
-      <div class="task-actions">
-        <button class="edit">✏️</button>
-        <button class="delete">🗑️</button>
-      </div>
-    `;
+  // sort
+  const order = { high: 0, medium: 1, low: 2 };
 
-    // completar
-    li.querySelector("input").addEventListener("change", () => {
-      toggleTask(task.id);
-    });
+  if (sortMode === 'newest')
+    result.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-    // eliminar
-    li.querySelector(".delete").addEventListener("click", () => {
-      deleteTask(task.id);
-    });
+  if (sortMode === 'oldest')
+    result.sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt));
 
-    // editar
-    li.querySelector(".edit").addEventListener("click", () => {
-      editTask(task.id, task.text, li);
-    });
+  if (sortMode === 'priority')
+    result.sort((a,b) => order[a.priority] - order[b.priority]);
 
-    // doble click para editar también
-    li.querySelector("span").addEventListener("dblclick", () => {
-      editTask(task.id, task.text, li);
-    });
+  if (sortMode === 'alpha')
+    result.sort((a,b) => a.title.localeCompare(b.title));
 
-    taskList.appendChild(li);
-  });
+  return result;
+}
+
+/* ─────────────────────────────
+   RENDER
+──────────────────────────── */
+function render() {
+  const filtered = getFiltered();
+
+  sectionTitle.textContent = FILTER_LABELS[activeFilter] || 'Tareas';
+
+  if (!filtered.length) {
+    taskList.innerHTML = '';
+    emptyState.style.display = 'flex';
+    return;
+  }
+
+  emptyState.style.display = 'none';
+
+  taskList.innerHTML = filtered.map(buildCard).join('');
+  attachEvents(filtered);
 
   updateStats();
 }
 
-// ==========================
-// ESTADÍSTICAS + PROGRESO
-// ==========================
-function updateStats() {
-  const total = tasks.length;
-  const done = tasks.filter(t => t.completed).length;
-  const high = tasks.filter(t => t.priority === "alta").length;
+/* ─────────────────────────────
+   CARD
+──────────────────────────── */
+function buildCard(t) {
+  const created = new Date(t.createdAt).toLocaleDateString('es-PE');
 
-  statTotal.textContent = total;
-  statDone.textContent = done;
-  statHigh.textContent = high;
+  return `
+  <div class="task-card ${t.completed ? 'completed' : ''}" data-id="${t.id}">
+    <input type="checkbox" class="check" ${t.completed ? 'checked' : ''} />
 
-  taskCount.textContent = `${total} tareas`;
+    <div>
+      <strong>${t.title}</strong>
+      <p>${t.desc || ''}</p>
+      <small>${t.priority} • ${created}</small>
+    </div>
 
-  const progress = total === 0 ? 0 : Math.round((done / total) * 100);
-
-  progressFill.style.width = `${progress}%`;
-  progressPct.textContent = `${progress}%`;
+    <div class="actions">
+      <button class="edit">✏️</button>
+      <button class="delete">🗑️</button>
+    </div>
+  </div>`;
 }
 
-// ==========================
-// INICIO
-// ==========================
-renderTasks();
+/* ─────────────────────────────
+   EVENTS
+──────────────────────────── */
+function attachEvents(filtered) {
+
+  document.querySelectorAll('.task-card').forEach((card, i) => {
+
+    const id = card.dataset.id;
+
+    card.querySelector('.check').onclick = () => {
+      TaskManager.toggle(id);
+      render();
+    };
+
+    card.querySelector('.delete').onclick = () => {
+      TaskManager.remove(id);
+      render();
+    };
+
+    card.querySelector('.edit').onclick = () => openEdit(id);
+
+  });
+}
+
+/* ─────────────────────────────
+   EDIT
+──────────────────────────── */
+function openEdit(id) {
+  const t = tasks.find(x => x.id === id);
+  if (!t) return;
+
+  editingId = id;
+
+  taskTitle.value = t.title;
+  taskDesc.value = t.desc;
+  taskDue.value = t.due || '';
+
+  taskModal.classList.add('open');
+}
+
+function saveTask() {
+  const title = taskTitle.value.trim();
+  if (!title) return;
+
+  if (editingId) {
+    TaskManager.update(editingId, title, taskDesc.value, 'medium', taskDue.value);
+  } else {
+    TaskManager.create(title, taskDesc.value, 'medium', taskDue.value);
+  }
+
+  editingId = null;
+  taskModal.classList.remove('open');
+
+  render();
+}
+
+/* ─────────────────────────────
+   STATS
+──────────────────────────── */
+function updateStats() {
+  $('statTotal').textContent = tasks.length;
+  $('statCompleted').textContent = tasks.filter(t => t.completed).length;
+}
+
+/* ─────────────────────────────
+   INIT
+──────────────────────────── */
+function init() {
+  tasks = Storage.load();
+  render();
+}
+
+init();
